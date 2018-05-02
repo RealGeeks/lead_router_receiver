@@ -1,5 +1,7 @@
 module LeadRouterReceiver
   class LeadRouterMessage < ApplicationRecord
+    self.table_name = :lead_router_messages
+
     include HasProcessingLog
 
     def self.ignored_after ;  7.days ; end
@@ -31,12 +33,6 @@ module LeadRouterReceiver
 
     def parsed_data
       @parsed_data ||= JSON.parse(body)
-    end
-
-    def record_event(message, clock: Clock.for_current_time)
-      if ENV['LOG_LEAD_ROUTER_MESSAGES'].nil? || ENV['LOG_LEAD_ROUTER_MESSAGES'] == 'true'
-        super
-      end
     end
   end
 end
