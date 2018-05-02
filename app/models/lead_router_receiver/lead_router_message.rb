@@ -1,7 +1,5 @@
 module LeadRouterReceiver
   class LeadRouterMessage < ApplicationRecord
-    self.table_name = :lead_router_messages
-
     include HasProcessingLog
 
     def self.ignored_after ;  7.days ; end

@@ -12,7 +12,7 @@
 
 ActiveRecord::Schema.define(version: 2018_05_02_210528) do
 
-  create_table "lead_router_messages", force: :cascade do |t|
+  create_table "lead_router_receiver_lead_router_messages", force: :cascade do |t|
     t.datetime "created"
     t.string "site_uuid"
     t.string "subject_id"
