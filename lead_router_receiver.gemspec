@@ -22,4 +22,8 @@ Gem::Specification.new do |s|
 
   s.add_development_dependency "sqlite3"
   s.add_development_dependency "rspec-rails"
+  s.add_development_dependency "rspec-its"
+  s.add_development_dependency "climate_control"
+  s.add_development_dependency "awesome_print"
+  s.add_development_dependency "table_print"
 end

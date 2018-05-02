@@ -1,0 +1,34 @@
+{
+  "agent_name": "Ben Harper", 
+  "first_name": "Jack", 
+  "site_domain": "www.mysite.com", 
+  "activities": [
+    {
+      "source": "Website Property Search", 
+      "type": "visited", 
+      "description": "First visit (initial sign-up)", 
+      "created": "2015-10-01T06:14:01.632792Z"
+    }, 
+    {
+      "source": "Website Property Search", 
+      "type": "search_performed", 
+      "created": "2015-10-01T06:14:01.632792Z"
+    }, 
+    {
+      "source": "Website Property Search", 
+      "type": "saved_search_added", 
+      "created": "2015-10-01T06:14:01.632792Z"
+    }
+  ], 
+  "agent_email": "ben@mail.com", 
+  "created": "2015-10-01T06:14:01.597026Z", 
+  "id": "a27c20af4497415d9e4e7334dd1d40d2", 
+  "phone": "808-817-2382", 
+  "last_name": "Johnson", 
+  "site_uuid": "5ead6dd1-2cb9-4f80-80fc-5716b05c90ba", 
+  "source": "Website Property Search", 
+  "action": "created", 
+  "role": "Buyer", 
+  "partner_id": "ffffffffuuuuuuuuuu", 
+  "email": "jack@mail.com"
+}
