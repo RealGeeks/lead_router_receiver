@@ -5,6 +5,8 @@ module LeadRouterReceiver
     before_action :authenticate
 
     def receive_message
+      render_status 406 and return unless in_actions_we_use?(lrm_action)
+
       message = create_message
       case
       when message.nil?
@@ -54,18 +56,19 @@ module LeadRouterReceiver
         OpenSSL::HMAC.hexdigest(digest, secret, text)
       end
 
+    def lrm_action
+      @_lrm_action ||= ( header_action || json_data["action"] )
+    end
+
     def create_message
-      raw_json = request.raw_post
-      action = header_action || json_data["action"]
-      return nil unless in_actions_we_use?(action)
-      return nil if action == 'activity_added' && !any_activities_we_use?
+      return nil if lrm_action == 'activity_added' && !any_activities_we_use?
 
       lrm = LeadRouterMessage.create({
         created:               header_timestamp || json_data["created"],
         site_uuid:             json_data["site_uuid"],
-        action:                action,
+        action:                lrm_action,
         subject_id:            json_data["id"].gsub('-',''),
-        body:                  raw_json,
+        body:                  request.raw_post,
         lead_router_timestamp: header_timestamp,
       })
       lrm
