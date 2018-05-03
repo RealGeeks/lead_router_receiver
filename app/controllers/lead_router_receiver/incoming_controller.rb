@@ -43,27 +43,27 @@ module LeadRouterReceiver
       # before_action lineup.
     end
 
-      def valid_signature?( text, secret, provided_signature )
-        expected_signature = sign_message( text, secret )
-        provided_signature == expected_signature
-      end
+    def valid_signature?( text, secret, provided_signature )
+      expected_signature = sign_message( text, secret )
+      provided_signature == expected_signature
+    end
 
-        def sign_message(text, secret)
-          digest = OpenSSL::Digest.new('sha256')
-          OpenSSL::HMAC.hexdigest(digest, secret, text)
-        end
+    def sign_message(text, secret)
+      digest = OpenSSL::Digest.new('sha256')
+      OpenSSL::HMAC.hexdigest(digest, secret, text)
+    end
 
     def lrm_action
       @_lrm_action ||= ( header_action || json_data["action"] )
     end
 
-      def header_action
-        request.headers["X-Lead-Router-Action"]
-      end
+    def header_action
+      request.headers["X-Lead-Router-Action"]
+    end
 
-      def json_data
-        @_json_data ||= JSON.parse(request.raw_post)
-      end
+    def json_data
+      @_json_data ||= JSON.parse(request.raw_post)
+    end
 
     def create_message
       LeadRouterMessage.create({
@@ -76,9 +76,9 @@ module LeadRouterReceiver
       })
     end
 
-      def header_timestamp
-        request.headers["X-Lead-Router-Timestamp"]
-      end
+    def header_timestamp
+      request.headers["X-Lead-Router-Timestamp"]
+    end
 
     def adds_activities_we_care_about?
       return true if lrm_action != 'activity_added'
