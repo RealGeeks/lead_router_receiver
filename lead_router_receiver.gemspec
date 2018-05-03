@@ -14,6 +14,8 @@ Gem::Specification.new do |s|
   s.description = "Rails Engine for receiving messages from the Lead Router firehose."
   s.license     = "MIT"
 
+  s.metadata["allowed_push_host"] = "https://mKVpnyVa3n8U2PM98cnX@repo.fury.io/realgeeks/"
+
   s.files = Dir["{app,config,db,lib}/**/*", "MIT-LICENSE", "Rakefile", "README.md"]
   s.test_files = Dir["spec/**/*"]
 
