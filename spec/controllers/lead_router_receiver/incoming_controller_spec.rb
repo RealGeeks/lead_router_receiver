@@ -23,6 +23,12 @@ module LeadRouterReceiver
     end
 
     context "when LEAD_ROUTER_SECRET is present in the environment" do
+      before do
+        allow_any_instance_of(described_class).to receive( :enqueue_processor )
+        allow_any_instance_of(described_class).to receive( :in_actions_we_use? ).and_return( true )
+        allow_any_instance_of(described_class).to receive( :in_activity_types_we_use? ).and_return( true )
+      end
+
       around :example do |example|
         ClimateControl.modify LEAD_ROUTER_SECRET: "seekrit" do
           example.run
@@ -57,15 +63,15 @@ module LeadRouterReceiver
       end
 
       specify "ignore lead router messages for actions we do not care about" do
-        pending "configurable options"
+        expect_any_instance_of(described_class).to receive(:in_actions_we_use?).with( "magic" ).and_return( false )
 
         headers["X-Lead-Router-Action"] = "magic"
         post incoming_path, params: json_body, headers: headers
         expect( LeadRouterMessage.count ).to eq( 0 )
       end
 
-      specify "ignore this unrelated lead router message" do
-        pending "configurable options"
+      specify "ignore lead router messages that don't contain any activity types we care about" do
+        allow_any_instance_of(described_class).to receive(:in_activity_types_we_use?).and_return( false )
 
         headers["X-Lead-Router-Action"] = "activity_added"
         post incoming_path, params: json_body, headers: headers
@@ -80,12 +86,9 @@ module LeadRouterReceiver
       end
 
       specify "after the message is saved, we enqueue a job to process it" do
-        pending "configurable options"
+        expect_any_instance_of(described_class).to receive(:enqueue_processor).with( instance_of(LeadRouterMessage) )
 
-        post "/v1/lead_router", params: json_body, headers: headers
-        message = LeadRouterMessage.last
-
-        expect( ProcessLeadRouterMessagesForSubject ).to have_received( :perform_async ).with( message.subject_id, message.site_uuid )
+        post incoming_path, params: json_body, headers: headers
       end
 
     end

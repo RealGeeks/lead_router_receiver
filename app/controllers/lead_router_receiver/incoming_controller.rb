@@ -6,11 +6,13 @@ module LeadRouterReceiver
 
     def receive_message
       message = create_message
-      if message && message.persisted?
-        # enqueue_processor(message)# FIXME: figure out how to make this configurable
-        render_status 200
-      elsif message == false #Silently accept activities we do not care about
+      case
+      when message.nil?
+        # Silently accept activities we do not care about
         render_status 406
+      when message.persisted?
+        enqueue_processor(message)
+        render_status 200
       else
         raise "Unable to create LeadRouterMessage: #{message&.errors&.to_json}"
         render_status 500
@@ -19,17 +21,16 @@ module LeadRouterReceiver
 
     private
 
-    def authenticate
-      validate_rg_signature(
-        text:       request.raw_post,
-        signature:  request.headers['HTTP_X_LEAD_ROUTER_SIGNATURE'],
-        env_secret: 'LEAD_ROUTER_SECRET',
-      )
+    def render_status(status)
+      render body: nil, status: status
     end
 
-    def validate_rg_signature( text:, signature:, env_secret: )
-      secret = ENV[env_secret]
+    def authenticate
+      text       = request.raw_post
+      signature  = request.headers['HTTP_X_LEAD_ROUTER_SIGNATURE']
+      env_secret = 'LEAD_ROUTER_SECRET'
 
+      secret = ENV[env_secret]
       if secret.blank?
         render_status 500
         return
@@ -43,22 +44,21 @@ module LeadRouterReceiver
       # before_action lineup.
     end
 
-    def sign_message(text, secret)
-      digest = OpenSSL::Digest.new('sha256')
-      OpenSSL::HMAC.hexdigest(digest, secret, text)
-    end
+      def valid_signature?( text, secret, provided_signature )
+        expected_signature = sign_message( text, secret )
+        provided_signature == expected_signature
+      end
 
-    def valid_signature?( text, secret, provided_signature )
-      expected_signature = sign_message( text, secret )
-      provided_signature == expected_signature
-    end
+      def sign_message(text, secret)
+        digest = OpenSSL::Digest.new('sha256')
+        OpenSSL::HMAC.hexdigest(digest, secret, text)
+      end
 
     def create_message
       raw_json = request.raw_post
-      json_data = JSON.parse(raw_json)
       action = header_action || json_data["action"]
-      # return false unless in_actions_we_use?(action)                                   # FIXME: figure out how to make this configurable
-      # return false if action == 'activity_added' && !any_activities_we_use?(json_data) # FIXME: figure out how to make this configurable
+      return nil unless in_actions_we_use?(action)
+      return nil if action == 'activity_added' && !any_activities_we_use?
 
       lrm = LeadRouterMessage.create({
         created:               header_timestamp || json_data["created"],
@@ -71,11 +71,56 @@ module LeadRouterReceiver
       lrm
     end
 
-    def header_timestamp ; request.headers["X-Lead-Router-Timestamp"] ; end
-    def header_action    ; request.headers["X-Lead-Router-Action"]    ; end
+      def json_data
+        @_json_data ||= JSON.parse(request.raw_post)
+      end
 
-    def render_status(status)
-      render body: nil, status: status
+      def header_timestamp ; request.headers["X-Lead-Router-Timestamp"] ; end
+      def header_action    ; request.headers["X-Lead-Router-Action"]    ; end
+
+      def any_activities_we_use?
+        activity_types = Array( json_data["activities"] ).map { |a| a['type'] }
+        return false if activity_types.empty?
+
+        results = activity_types.map do |activity_type|
+          in_activity_types_we_use?(activity_type)
+        end
+        results.uniq != [false]
+      end
+
+
+    ##### METHODS THAT MOUNTING RAILS APP MUST OVERRIDE #####
+    def in_actions_we_use?(*)
+      fail NotImplementedError, __implement_me_message__("in_actions_we_use?(action)")
+    end
+
+    def in_activity_types_we_use?(*)
+      fail NotImplementedError, __implement_me_message__("in_activity_types_we_use?(activity_type)")
+    end
+
+    def enqueue_processor(*)
+      fail NotImplementedError, __implement_me_message__("enqueue_processor(message)")
+    end
+    ##### /METHODS THAT MOUNTING RAILS APP MUST OVERRIDE #####
+
+
+    def __implement_me_message__(method_name_and_args)
+      <<~EOF
+        The Rails app that uses this engine MUST override this method!
+
+        To do so, create a file "app/decorators/controllers/lead_router_receiver/incoming_controller_decorator.rb"
+        and paste in the following code:
+
+        ```
+        LeadRouterReceiver::IncomingController.class_eval do
+          def #{method_name_and_args}
+            fail "write me"
+          end
+        end
+        ```
+
+        (...and, obviously, change the method body.)
+      EOF
     end
   end
 end
