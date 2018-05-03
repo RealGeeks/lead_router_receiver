@@ -6,13 +6,10 @@ module LeadRouterReceiver
 
     def receive_message
       render_status 406 and return unless in_actions_we_use?(lrm_action)
+      render_status 406 and return unless adds_activities_we_care_about?
 
       message = create_message
-      case
-      when message.nil?
-        # Silently accept activities we do not care about
-        render_status 406
-      when message.persisted?
+      if message.persisted?
         enqueue_processor(message)
         render_status 200
       else
@@ -51,19 +48,25 @@ module LeadRouterReceiver
         provided_signature == expected_signature
       end
 
-      def sign_message(text, secret)
-        digest = OpenSSL::Digest.new('sha256')
-        OpenSSL::HMAC.hexdigest(digest, secret, text)
-      end
+        def sign_message(text, secret)
+          digest = OpenSSL::Digest.new('sha256')
+          OpenSSL::HMAC.hexdigest(digest, secret, text)
+        end
 
     def lrm_action
       @_lrm_action ||= ( header_action || json_data["action"] )
     end
 
-    def create_message
-      return nil if lrm_action == 'activity_added' && !any_activities_we_use?
+      def header_action
+        request.headers["X-Lead-Router-Action"]
+      end
 
-      lrm = LeadRouterMessage.create({
+      def json_data
+        @_json_data ||= JSON.parse(request.raw_post)
+      end
+
+    def create_message
+      LeadRouterMessage.create({
         created:               header_timestamp || json_data["created"],
         site_uuid:             json_data["site_uuid"],
         action:                lrm_action,
@@ -71,25 +74,23 @@ module LeadRouterReceiver
         body:                  request.raw_post,
         lead_router_timestamp: header_timestamp,
       })
-      lrm
     end
 
-      def json_data
-        @_json_data ||= JSON.parse(request.raw_post)
+      def header_timestamp
+        request.headers["X-Lead-Router-Timestamp"]
       end
 
-      def header_timestamp ; request.headers["X-Lead-Router-Timestamp"] ; end
-      def header_action    ; request.headers["X-Lead-Router-Action"]    ; end
+    def adds_activities_we_care_about?
+      return true if lrm_action != 'activity_added'
 
-      def any_activities_we_use?
-        activity_types = Array( json_data["activities"] ).map { |a| a['type'] }
-        return false if activity_types.empty?
+      activity_types = Array( json_data["activities"] ).map { |a| a['type'] }
+      return false if activity_types.empty?
 
-        results = activity_types.map do |activity_type|
-          in_activity_types_we_use?(activity_type)
-        end
-        results.uniq != [false]
+      results = activity_types.map do |activity_type|
+        in_activity_types_we_use?(activity_type)
       end
+      results.uniq != [false]
+    end
 
 
     ##### METHODS THAT MOUNTING RAILS APP MUST OVERRIDE #####
