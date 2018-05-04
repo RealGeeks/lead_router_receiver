@@ -61,6 +61,8 @@ module LeadRouterReceiver
     end
 
     def self.require_processing_columns!(model)
+      # FIXME:  This will crash the application that mounts this engine so migrations are a PITA to run on
+      # a deployed environment
       missing_columns = REQUIRED_COLUMN_NAMES.reject { |col_name|
         model.column_names.include?(col_name)
       }
