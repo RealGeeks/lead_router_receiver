@@ -31,6 +31,7 @@ module LeadRouterReceiver
 
       secret = ENV[env_secret]
       if secret.blank?
+        Rails.logger.warn "Received a message that might be from Lead Router, but can't authenticate it without the #{env_secret} environment variable!"
         render_status 500
         return
       end
