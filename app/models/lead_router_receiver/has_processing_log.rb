@@ -54,15 +54,26 @@ module LeadRouterReceiver
       # the last event message.  N depends on the individual table, so
       # pull the limit from the #columns
       receiver.class_attribute :last_processing_message_limit
-      receiver.last_processing_message_limit = receiver.columns.detect {|e| e.name == "last_processing_message" } &.limit
+
+      if table_exists?(receiver) # see big comment in .require_processing_columns!
+        col = receiver.columns.detect {|e| e.name == "last_processing_message" }
+        receiver.last_processing_message_limit = col&.limit
+      end
       receiver.last_processing_message_limit ||= 100
 
       receiver.include InstanceMethods
     end
 
     def self.require_processing_columns!(model)
-      # FIXME:  This will crash the application that mounts this engine so migrations are a PITA to run on
-      # a deployed environment
+      # When an app first includes this engine, this validation step
+      # will crash until the migrations are run.  Unfortunately, Rails
+      # seems to want to eager-load engines on startup, so the crash
+      # prevents the app from loading, which means you're going to have
+      # a bad time when you try to deploy.  If we can detect that the
+      # table is missing, just quit and try again later.
+      return unless table_exists?(model)
+
+      # Still here?  Okay, *now* we can afford to be super picky.  :)
       missing_columns = REQUIRED_COLUMN_NAMES.reject { |col_name|
         model.column_names.include?(col_name)
       }
@@ -73,6 +84,18 @@ module LeadRouterReceiver
           but is missing the following required columns:
           #{missing_columns.inspect}
         EOF
+      end
+    end
+
+
+
+    def self.table_exists?(model)
+      conn = ActiveRecord::Base.connection
+      if conn.table_exists?( model.table_name )
+        return true
+      else
+        Rails.logger.warn ">>> Including HasProcessingLog in #{model}, but the model's table is missing. Have you run migrations?"
+        return false
       end
     end
 
