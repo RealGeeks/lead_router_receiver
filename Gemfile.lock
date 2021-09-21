@@ -2,7 +2,6 @@ PATH
   remote: .
   specs:
     lead_router_receiver (0.1.1)
-      json (~> 2.1)
       rails (~> 5.2)
 
 GEM
@@ -61,7 +60,6 @@ GEM
       activesupport (>= 5.0)
     i18n (1.8.10)
       concurrent-ruby (~> 1.0)
-    json (2.5.1)
     loofah (2.12.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
