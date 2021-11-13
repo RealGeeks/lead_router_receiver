@@ -25,6 +25,8 @@ module LeadRouterReceiver
     end
 
     def authenticate
+      return if ENV["DO_NOT_VERIFY_HMAC"] == "yes-really"
+
       text       = request.raw_post
       signature  = request.headers['HTTP_X_LEAD_ROUTER_SIGNATURE']
       env_secret = 'LEAD_ROUTER_SECRET'
