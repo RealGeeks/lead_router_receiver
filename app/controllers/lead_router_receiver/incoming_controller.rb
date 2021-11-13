@@ -31,12 +31,13 @@ module LeadRouterReceiver
 
       secret = ENV[env_secret]
       if secret.blank?
-        Rails.logger.warn "Received a message that might be from Lead Router, but can't authenticate it without the #{env_secret} environment variable!"
+        Rails.logger.warn "[lead_router_receiver/authenticate]: Received a message that might be from Lead Router, but can't authenticate it without the #{env_secret} environment variable!"
         render_status 500
         return
       end
 
       unless valid_signature?( text, secret, signature )
+        Rails.logger.warn "[lead_router_receiver/authenticate]: Received a message, but the signature doesn't match what we expected based on the #{env_secret} environment variable"
         render_status 404
       end
 
