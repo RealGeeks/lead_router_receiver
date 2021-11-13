@@ -2,7 +2,7 @@ PATH
   remote: .
   specs:
     lead_router_receiver (0.2.0)
-      rails (> 5.2, < 7.0)
+      rails (>= 5.2, < 7.0)
 
 GEM
   remote: https://rubygems.org/
