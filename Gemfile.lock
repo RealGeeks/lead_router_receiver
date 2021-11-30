@@ -1,7 +1,7 @@
 PATH
   remote: .
   specs:
-    lead_router_receiver (0.2.0)
+    lead_router_receiver (0.2.3)
       rails (>= 5.2, < 7.0)
 
 GEM
