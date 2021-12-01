@@ -28,3 +28,17 @@ desc "Run all specs in spec directory (excluding plugin specs)"
 RSpec::Core::RakeTask.new(:spec => 'app:db:test:prepare')
 
 task :default => :spec
+
+
+
+Rake::Task["release"].clear
+task :release do
+  puts <<~EOF
+
+    :nothingtodohere:
+
+        So, uh, we don't actually push this engine to gemfury.
+        Apps that use it just point their Gemfile directly at the github repo.
+
+  EOF
+end
